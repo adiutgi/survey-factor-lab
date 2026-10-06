@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Survey Factor Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: slim header, settings rail on the left (stacks on phones), step tabs + results on the right */
+:root{
+  --bg:#F5F6F4; --panel:#FFFFFF; --fg:#1C2421; --muted:#5E6B66; --line:#DCE1DE;
+  --accent:#0E6B66; --accent-soft:#DDEEEC; --neg:#8A3B6B; --neg-soft:#F3E3EC;
+  --warn:#9A5B00; --warn-soft:#FBEBD2; --good:#2E7D4F;
+  --display:"Newsreader",Georgia,serif; --body:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --r:8px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121715; --panel:#1A211E; --fg:#E4EAE7; --muted:#9AA8A2; --line:#2C3632;
+  --accent:#4FC2B9; --accent-soft:#16332F; --neg:#D98BB8; --neg-soft:#3A2230;
+  --warn:#F0B35A; --warn-soft:#3A2C16; --good:#6FCF97; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121715; --panel:#1A211E; --fg:#E4EAE7; --muted:#9AA8A2; --line:#2C3632;
+  --accent:#4FC2B9; --accent-soft:#16332F; --neg:#D98BB8; --neg-soft:#3A2230;
+  --warn:#F0B35A; --warn-soft:#3A2C16; --good:#6FCF97; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font:14px/1.5 var(--body);margin:0}
+.wrap{max-width:1320px;margin:0 auto;padding-inline:20px;padding-block:20px 48px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 20px;margin-bottom:16px}
+h1{font:600 30px/1.1 var(--display);margin:0;letter-spacing:-.01em;text-wrap:balance}
+.sub{color:var(--muted);max-width:70ch}
+.grid{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.rail{display:flex;flex-direction:column;gap:16px}
+h2{font:600 20px/1.2 var(--display);margin:0 0 4px}
+h3{font:600 12px/1.2 var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px}
+.drop{border:1.5px dashed var(--line);border-radius:var(--r);padding:16px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop strong{display:block}
+.file{font:12px var(--mono);color:var(--muted);margin-top:8px;word-break:break-all}
+.chip{display:inline-block;font:500 11px var(--body);padding:2px 8px;border-radius:99px;background:var(--warn-soft);color:var(--warn)}
+.chip.ok{background:var(--accent-soft);color:var(--accent)}
+.fixed{font:500 13px var(--body);color:var(--fg)}
+div.f{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;margin:8px 0}
+label.f{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;margin:8px 0}
+input[type=number],select{font:13px var(--body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+input[type=number]{width:78px}
+button{font:500 13px var(--body);border-radius:6px;padding:7px 12px;border:1px solid var(--accent);background:var(--accent);color:var(--panel);cursor:pointer}
+button.ghost{background:transparent;color:var(--accent)}
+button:focus-visible,select:focus-visible,input:focus-visible,.drop:focus-visible,[role=tab]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cols{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:6px}
+.cols div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 8px;border-bottom:1px solid var(--line);font-size:12.5px}
+.cols div:last-child{border-bottom:0}
+.cols span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cols select{font-size:12px;padding:2px 4px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:16px}
+.kpi{background:var(--panel);padding:10px 14px}
+.kpi b{display:block;font:500 22px/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.kpi small{color:var(--muted);font-size:12px}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px}
+[role=tab]{background:none;border:0;border-bottom:2px solid transparent;border-radius:0;color:var(--muted);padding:8px 12px;font-weight:500}
+[role=tab][aria-selected=true]{color:var(--fg);border-bottom-color:var(--accent)}
+[role=tab] i{font:500 11px var(--mono);font-style:normal;color:var(--accent);margin-right:6px}
+.lead{max-width:75ch;margin:0 0 14px;color:var(--muted)}
+.lead b{color:var(--fg)}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+table{border-collapse:collapse;font-size:12.5px;width:100%}
+th,td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+th{font-weight:600;background:var(--bg);position:sticky;top:0}
+td.q,th.q{text-align:left;white-space:normal;min-width:180px;max-width:340px}
+td.n{font-family:var(--mono)}
+.heat td.n{font-size:11px;padding:4px 3px;text-align:center;min-width:38px}
+.heat th.v{text-align:center;font:600 11px var(--mono);padding:6px 3px;min-width:38px;cursor:help}
+.heat td.q{min-width:220px;max-width:300px;font-size:12px;line-height:1.3;position:sticky;left:0;background:var(--panel);z-index:1}
+.heat th.q{position:sticky;left:0;z-index:2}
+.ix{display:inline-block;min-width:22px;font:600 11px var(--mono);color:var(--accent)}
+td.hi{background:var(--accent-soft);font-weight:600}
+.hrow{display:flex;justify-content:space-between;align-items:center}
+.info{width:22px;height:22px;padding:0;border-radius:50%;background:transparent;color:var(--accent);border:1.5px solid var(--accent);font:italic 600 13px/1 Georgia,serif;text-transform:none;letter-spacing:0}
+.info[aria-expanded=true]{background:var(--accent);color:var(--panel)}
+.infop{margin-top:12px;padding:12px;border-radius:6px;background:var(--accent-soft);font-size:12.5px;line-height:1.45}
+.infop dl{margin:0}.infop dt{font-weight:600;margin-top:10px}.infop dt:first-child{margin-top:0}.infop dd{margin:2px 0 0}
+.tri td.blank{background:transparent;border-bottom-color:transparent}
+td.ng{color:var(--neg)}
+.pairs{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.pair{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:10px 12px;border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:6px;background:var(--panel)}
+.pair .r{font:600 15px var(--mono);color:var(--warn)}
+.pair .nm{flex:1 1 260px;min-width:0}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg label{font-size:12px;padding:4px 9px;cursor:pointer;border-right:1px solid var(--line)}
+.seg label:last-child{border-right:0}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label:has(input:checked){background:var(--accent);color:var(--panel)}
+.name-in{font:600 12px var(--body);color:var(--fg);background:transparent;border:1px dashed var(--line);border-radius:4px;padding:3px 5px;width:130px;text-align:center}
+.two{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:20px}
+@media (max-width:1000px){.two{grid-template-columns:minmax(0,1fr)}}
+svg text{fill:var(--muted);font:11px var(--body)}
+.note{font-size:12px;color:var(--muted);margin-top:10px;max-width:80ch}
+.msg{padding:10px 12px;border-radius:6px;background:var(--warn-soft);color:var(--warn);margin-bottom:12px}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.bar{height:8px;border-radius:4px;background:var(--accent)}
+.bar.n{background:var(--neg)}
+.method{max-width:78ch}
+.method h4{font:600 16px var(--display);margin:18px 0 4px}
+.method p,.method li{color:var(--fg)}
+code{font:12px var(--mono);background:var(--bg);padding:1px 4px;border-radius:3px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Survey Factor Lab</h1>
+    <span class="sub">Upload a customer survey and see which questions are redundant, which group into service dimensions, and which dimensions drive satisfaction.</span>
+  </header>
+
+  <div class="grid">
+    <aside class="rail">
+      <section class="panel">
+        <h3>1 · Data</h3>
+        <div class="drop" id="drop" tabindex="0" role="button" aria-label="Upload a survey file">
+          <strong>Drop a CSV or Excel file</strong>
+          <span class="sub" style="font-size:12px">or click to choose. One row per respondent, one column per question.</span>
+        </div>
+        <input type="file" id="file" accept=".csv,.xlsx,.xls,.tsv" hidden>
+        <div class="file" id="fileinfo"></div>
+        <label class="f" id="sheetrow" hidden>Sheet <select id="sheet"></select></label>
+        <div class="actions" style="margin-top:10px">
+          <button class="ghost" id="tmpl">Get template</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h3>2 · Columns</h3>
+        <div class="cols" id="cols"></div>
+        <p class="note">Roles are predicted from the data. Numeric columns become questions; a column named like "Overall satisfaction" becomes the outcome.</p>
+      </section>
+
+      <section class="panel">
+        <h3 class="hrow">3 · Settings <button type="button" class="info" id="infoBtn" aria-expanded="false" aria-controls="infoPanel" aria-label="What do these settings do?" title="What do these settings do?">i</button></h3>
+        <label class="f">Redundancy threshold (r ≥) <input type="number" id="thr" step="0.01" min="0.5" max="0.99" value="0.85"></label>
+        <label class="f">Components <select id="ncomp"><option value="0">Auto (eigenvalue &gt; 1)</option></select></label>
+        <label class="f">Loading cutoff <input type="number" id="cut" step="0.05" min="0.3" max="0.9" value="0.5"></label>
+        <div class="f">Rotation <span class="fixed">Varimax</span></div>
+        <div class="infop" id="infoPanel" hidden>
+          <dl>
+            <dt>Redundancy threshold</dt>
+            <dd>Two questions that correlate at or above this value are treated as duplicates, and one is dropped. Lower it and more questions are dropped. Raise it and fewer are.</dd>
+            <dt>Components</dt>
+            <dd>How many dimensions the tool extracts. Auto keeps each dimension that explains more than a single question does. Pick more and the dimensions get narrower. Pick fewer and they get broader.</dd>
+            <dt>Loading cutoff</dt>
+            <dd>How strong a question's highest loading must be for it to be highlighted. Each question is highlighted under one dimension at most. This changes the highlighting only, not the numbers.</dd>
+            <dt>Rotation</dt>
+            <dd>Varimax turns the dimensions so each question lines up with mainly one, which makes them easier to name. It is always applied.</dd>
+          </dl>
+        </div>
+      </section>
+    </aside>
+
+    <main style="min-width:0">
+      <div id="err" class="msg" hidden></div>
+      <section id="empty" class="panel" style="padding:24px">
+        <h2>Upload a survey to begin</h2>
+        <p class="lead" style="margin-top:6px">Use the Data panel to load a CSV or Excel file. Everything runs in this browser; the file never leaves your computer.</p>
+        <h3 style="margin-top:18px">Expected layout</h3>
+        <div class="scroll"><table>
+          <thead><tr><th class="q">Respondent ID</th><th class="q">Segment</th><th>Q1 Question text</th><th>Q2 Question text</th><th>Q3 Question text</th><th>…</th><th>Overall Satisfaction</th></tr></thead>
+          <tbody><tr><td class="q">1</td><td class="q">Student</td><td class="n">6</td><td class="n">5</td><td class="n">7</td><td>…</td><td class="n">6</td></tr>
+          <tr><td class="q">2</td><td class="q">Local</td><td class="n">4</td><td class="n">4</td><td class="n">5</td><td>…</td><td class="n">4</td></tr></tbody></table></div>
+        <ul class="note" style="padding-left:18px;margin-top:12px">
+          <li>First row holds the column names; each later row is one respondent.</li>
+          <li>Question columns hold numeric values, on any scale or unit. Blank cells drop that respondent.</li>
+          <li>ID and text columns are detected and left out. A column named like "Overall satisfaction" becomes the outcome for Step 4.</li>
+          <li>Aim for at least 5 respondents per question and at least 3 questions.</li>
+        </ul>
+        <div class="actions" style="margin-top:14px"><button id="pick2">Choose a file</button><button class="ghost" id="howto">How the analysis works</button></div>
+      </section>
+      <div class="kpis" id="kpis"></div>
+      <div class="tabs" role="tablist" id="tabs">
+        <button role="tab" data-t="s1"><i>01</i>Raw data</button>
+        <button role="tab" data-t="s2"><i>02</i>Correlations</button>
+        <button role="tab" data-t="s3"><i>03</i>Factor loadings</button>
+        <button role="tab" data-t="s4"><i>04</i>Linkage</button>
+        <button role="tab" data-t="m">How it works</button>
+      </div>
+      <section id="s1" role="tabpanel"></section>
+      <section id="s2" role="tabpanel" hidden></section>
+      <section id="s3" role="tabpanel" hidden></section>
+      <section id="s4" role="tabpanel" hidden></section>
+      <section id="m" role="tabpanel" hidden class="method">
+        <h2>The logic behind the tool</h2>
+        <p>Factor analysis asks one question: if customers' answers to twenty questions rise and fall together in a few patterns, what are those patterns? Each pattern is a <b>service dimension</b> customers actually perceive, such as "speed" or "staff friendliness". The tool finds them in four moves.</p>
+        <h4>1. Correlate</h4>
+        <p>Each column is put on a common scale, so columns measured in different units or ranges count equally. The correlation matrix then shows, for every pair of questions, how strongly the two move together: when one is high, is the other high too?</p>
+        <h4>2. Remove near-duplicates</h4>
+        <p>When two questions correlate above the threshold (0.85 by default), customers are treating them as the same question. Keeping both double-weights that dimension and adds survey length with no new information, so one is dropped. By default the tool keeps the one listed first; you can override each decision.</p>
+        <h4>3. Extract components (PCA)</h4>
+        <p>Principal Component Analysis finds the eigenvectors of the correlation matrix. Each eigenvalue says how many questions' worth of variance that component explains. A component with eigenvalue above 1 explains more than a single question does, so it is kept (Kaiser rule). The scree plot shows where the curve flattens.</p>
+        <h4>4. Rotate (Varimax) and read the loadings</h4>
+        <p>Raw components are hard to read because most questions load a little on everything. Varimax rotates the axes so each question loads strongly on one component and weakly on the rest, without changing how much total variance is explained. A <b>loading</b> is the correlation between a question and a component. Each question is assigned to the component where its loading is highest, provided that loading is 0.5 or more. Questions assigned to the same component form a dimension; you name it by reading them.</p>
+        <h4>5. Link to outcomes</h4>
+        <p>Each respondent gets a score on every dimension (regression method: <code>Z · R⁻¹ · L</code>). Regressing overall satisfaction on those scores shows which dimensions move satisfaction most.</p>
+        <h4>Diagnostics</h4>
+        <ul>
+          <li><b>KMO</b> (0 to 1) measures whether correlations are driven by shared factors. Above 0.8 is good, above 0.6 is acceptable, below 0.5 means factor analysis is not appropriate.</li>
+          <li><b>Bartlett's test</b> checks the questions are correlated at all. A p-value below 0.05 means they are.</li>
+        </ul>
+        <p class="note">The math runs in your browser; uploaded files are not sent anywhere. Results match SPSS "Principal Component Analysis, Varimax with Kaiser Normalization" up to sign and column order.</p>
+      </section>
+      <div class="actions" id="actions" style="margin-top:18px">
+        <button id="export">Download Excel report</button>
+        <button class="ghost" id="copy">Copy loadings table</button>
+        <span class="note" id="exportmsg" style="margin:0;align-self:center"></span>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="xlsx.full.min.js"></script>
+<script>
+const FA = (() => {
+  const mean = a => a.reduce((s, x) => s + x, 0) / a.length;
+  const sd = a => { const m = mean(a); return Math.sqrt(a.reduce((s, x) => s + (x - m) ** 2, 0) / (a.length - 1)); };
+  function corr(cols) {
+    const k = cols.length, n = cols[0].length;
+    const z = cols.map(c => { const m = mean(c); const s = Math.sqrt(c.reduce((t, x) => t + (x - m) ** 2, 0)); return c.map(x => s ? (x - m) / s : 0); });
+    const C = Array.from({ length: k }, () => new Array(k).fill(0));
+    for (let i = 0; i < k; i++) for (let j = i; j < k; j++) {
+      let s = 0; for (let r = 0; r < n; r++) s += z[i][r] * z[j][r];
+      C[i][j] = C[j][i] = i === j ? 1 : s;
+    }
+    return C;
+  }
+  function eigSym(M) {
+    const n = M.length, a = M.map(r => r.slice()), V = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => +(i === j)));
+    for (let sweep = 0; sweep < 100; sweep++) {
+      let off = 0; for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) off += a[i][j] ** 2;
+      if (off < 1e-22) break;
+      for (let p = 0; p < n; p++) for (let q = p + 1; q < n; q++) {
+        const apq = a[p][q]; if (Math.abs(apq) < 1e-300) continue;
+        const app = a[p][p], aqq = a[q][q], th = (aqq - app) / (2 * apq);
+        const t = (th >= 0 ? 1 : -1) / (Math.abs(th) + Math.sqrt(th * th + 1)), c = 1 / Math.sqrt(t * t + 1), s = t * c;
+        a[p][p] = app - t * apq; a[q][q] = aqq + t * apq; a[p][q] = a[q][p] = 0;
+        for (let r = 0; r < n; r++) {
+          if (r !== p && r !== q) { const arp = a[r][p], arq = a[r][q]; a[r][p] = a[p][r] = c * arp - s * arq; a[r][q] = a[q][r] = s * arp + c * arq; }
+          const vrp = V[r][p], vrq = V[r][q]; V[r][p] = c * vrp - s * vrq; V[r][q] = s * vrp + c * vrq;
+        }
+      }
+    }
+    const idx = [...Array(n).keys()].sort((i, j) => a[j][j] - a[i][i]);
+    return { values: idx.map(i => a[i][i]), vectors: idx.map(i => V.map(r => r[i])) }; // vectors[j] = j-th eigenvector
+  }
+  function varimax(L) {
+    const p = L.length, k = L[0].length;
+    const h = L.map(r => Math.sqrt(r.reduce((s, x) => s + x * x, 0)) || 1);
+    const X = L.map((r, i) => r.map(x => x / h[i]));
+    for (let it = 0; it < 1000; it++) {
+      let maxphi = 0;
+      for (let j = 0; j < k; j++) for (let l = j + 1; l < k; l++) {
+        let A = 0, B = 0, C = 0, D = 0;
+        for (let i = 0; i < p; i++) { const u = X[i][j] ** 2 - X[i][l] ** 2, v = 2 * X[i][j] * X[i][l]; A += u; B += v; C += u * u - v * v; D += 2 * u * v; }
+        const phi = Math.atan2(D - 2 * A * B / p, C - (A * A - B * B) / p) / 4;
+        maxphi = Math.max(maxphi, Math.abs(phi));
+        if (Math.abs(phi) < 1e-12) continue;
+        const cs = Math.cos(phi), sn = Math.sin(phi);
+        for (let i = 0; i < p; i++) { const xj = X[i][j], xl = X[i][l]; X[i][j] = cs * xj + sn * xl; X[i][l] = -sn * xj + cs * xl; }
+      }
+      if (maxphi < 1e-10) break;
+    }
+    return X.map((r, i) => r.map(x => x * h[i]));
+  }
+  function inv(M) {
+    const n = M.length, A = M.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => +(i === j))]);
+    for (let c = 0; c < n; c++) {
+      let piv = c; for (let r = c + 1; r < n; r++) if (Math.abs(A[r][c]) > Math.abs(A[piv][c])) piv = r;
+      [A[c], A[piv]] = [A[piv], A[c]];
+      const d = A[c][c]; if (Math.abs(d) < 1e-12) throw new Error("singular");
+      for (let j = 0; j < 2 * n; j++) A[c][j] /= d;
+      for (let r = 0; r < n; r++) if (r !== c) { const f = A[r][c]; if (f) for (let j = 0; j < 2 * n; j++) A[r][j] -= f * A[c][j]; }
+    }
+    return A.map(r => r.slice(n));
+  }
+  const matmul = (A, B) => A.map(r => B[0].map((_, j) => r.reduce((s, x, i) => s + x * B[i][j], 0)));
+  function lgamma(x) { const g = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5]; let y = x, t = x + 5.5; t -= (x + 0.5) * Math.log(t); let s = 1.000000000190015; for (const c of g) s += c / ++y; return -t + Math.log(2.5066282746310005 * s / x); }
+  function chi2sf(x, k) {
+    const a = k / 2, z = x / 2; if (z <= 0) return 1;
+    if (z < a + 1) { let s = 1 / a, t = s; for (let n = 1; n < 10000 && Math.abs(t) > 1e-15 * Math.abs(s); n++) { t *= z / (a + n); s += t; } return Math.max(0, 1 - s * Math.exp(-z + a * Math.log(z) - lgamma(a))); }
+    let b = z + 1 - a, c = 1e300, d = 1 / b, h = d;
+    for (let i = 1; i < 10000; i++) { const an = -i * (i - a); b += 2; d = an * d + b; if (Math.abs(d) < 1e-300) d = 1e-300; c = b + an / c; if (Math.abs(c) < 1e-300) c = 1e-300; d = 1 / d; const del = d * c; h *= del; if (Math.abs(del - 1) < 1e-15) break; }
+    return Math.exp(-z + a * Math.log(z) - lgamma(a)) * h;
+  }
+  function kmo(C) {
+    const I = inv(C), n = C.length; let r2 = 0, p2 = 0; const per = [];
+    for (let j = 0; j < n; j++) { let rj = 0, pj = 0; for (let i = 0; i < n; i++) if (i !== j) { const pr = -I[i][j] / Math.sqrt(I[i][i] * I[j][j]); rj += C[i][j] ** 2; pj += pr * pr; } per.push(rj / (rj + pj)); r2 += rj; p2 += pj; }
+    return { overall: r2 / (r2 + p2), per };
+  }
+  function pcaVarimax(C, nComp, rotate = true) {
+    const { values, vectors } = eigSym(C);
+    let k = nComp || values.filter(v => v > 1).length; k = Math.max(1, Math.min(k, C.length));
+    let L = C.map((_, i) => Array.from({ length: k }, (_, j) => vectors[j][i] * Math.sqrt(Math.max(values[j], 0))));
+    if (rotate && k > 1) L = varimax(L);
+    const ss = [...Array(k).keys()].map(j => L.reduce((s, r) => s + r[j] ** 2, 0));
+    const ord = [...Array(k).keys()].sort((a, b) => ss[b] - ss[a]);
+    L = L.map(r => ord.map(j => r[j]));
+    for (let j = 0; j < k; j++) { let bi = 0; L.forEach((r, i) => { if (Math.abs(r[j]) > Math.abs(L[bi][j])) bi = i; }); if (L[bi][j] < 0) L.forEach(r => r[j] = -r[j]); }
+    return { eig: values, L, k };
+  }
+  function ols(X, y) {
+    const n = y.length, p = X[0].length;
+    const XtX = Array.from({ length: p }, (_, i) => Array.from({ length: p }, (_, j) => X.reduce((s, r) => s + r[i] * r[j], 0)));
+    const Xty = Array.from({ length: p }, (_, i) => X.reduce((s, r, t) => s + r[i] * y[t], 0));
+    const Iv = inv(XtX), b = Iv.map(r => r.reduce((s, x, j) => s + x * Xty[j], 0));
+    const e = y.map((v, t) => v - X[t].reduce((s, x, j) => s + x * b[j], 0)), my = mean(y);
+    const sse = e.reduce((s, x) => s + x * x, 0), sst = y.reduce((s, x) => s + (x - my) ** 2, 0), s2 = sse / (n - p);
+    const se = Iv.map((r, i) => Math.sqrt(s2 * r[i]));
+    return { b, se, t: b.map((x, i) => x / se[i]), r2: 1 - sse / sst };
+  }
+  return { mean, sd, corr, eigSym, varimax, inv, matmul, chi2sf, kmo, pcaVarimax, ols };
+})();
+
+
+</script>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const f2 = x => (x == null || isNaN(x)) ? "" : x.toFixed(2), f3 = x => (x == null || isNaN(x)) ? "" : x.toFixed(3);
+const S = { name: "", headers: [], rows: [], roles: {}, decisions: {}, names: {}, res: null, wb: null, tab: "s1" };
+
+/* ---------- loading ---------- */
+function loadTable(headers, rows, name) {
+  S.headers = headers.map((h, i) => String(h ?? "").trim() || `Column ${i + 1}`);
+  S.rows = rows.filter(r => r.some(v => v !== "" && v != null));
+  S.name = name; S.decisions = {}; S.names = {};
+  guessRoles(); renderCols(); run();
+}
+function fromSheet(ws, name) {
+  const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: "" });
+  if (aoa.length < 3) return showErr("That sheet has fewer than two data rows.");
+  loadTable(aoa[0], aoa.slice(1), name);
+}
+function handleFile(file) {
+  const rd = new FileReader();
+  rd.onload = e => {
+    try {
+      const wb = XLSX.read(new Uint8Array(e.target.result), { type: "array" });
+      S.wb = wb;
+      const sel = $("#sheet"); sel.innerHTML = wb.SheetNames.map(n => `<option>${esc(n)}</option>`).join("");
+      $("#sheetrow").hidden = wb.SheetNames.length < 2;
+      // pick the sheet with the most numeric columns
+      let best = wb.SheetNames[0], bestN = -1;
+      wb.SheetNames.forEach(n => { const a = XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true }); const r = a[1] || []; const k = r.filter(v => typeof v === "number").length * (a.length > 5 ? 1 : 0); if (k > bestN) { bestN = k; best = n; } });
+      sel.value = best;
+      $("#fileinfo").innerHTML = `${esc(file.name)}`;
+      fromSheet(wb.Sheets[best], file.name);
+    } catch (err) { showErr("Could not read that file. Save it as .csv or .xlsx and try again."); }
+  };
+  rd.readAsArrayBuffer(file);
+}
+$("#sheet").onchange = e => fromSheet(S.wb.Sheets[e.target.value], S.name);
+const dz = $("#drop"), fi = $("#file");
+dz.onclick = () => fi.click(); dz.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fi.click(); } };
+fi.onchange = () => fi.files[0] && handleFile(fi.files[0]);
+["dragenter", "dragover"].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add("over"); }));
+["dragleave", "drop"].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove("over"); }));
+dz.addEventListener("drop", e => e.dataTransfer.files[0] && handleFile(e.dataTransfer.files[0]));
+
+
+/* ---------- roles ---------- */
+const isNum = v => typeof v === "number" || (v !== "" && v != null && !isNaN(+v));
+function colValues(i) { return S.rows.map(r => r[i]).filter(v => v !== "" && v != null); }
+function guessRoles() {
+  S.roles = {}; let outcomeSet = false;
+  S.headers.forEach((h, i) => {
+    const vals = colValues(i), nums = vals.filter(isNum).map(Number);
+    if (!vals.length || nums.length < 0.9 * vals.length) { S.roles[i] = "text"; return; }
+    const uniq = new Set(nums).size, mono = nums.every((x, j) => j === 0 || x > nums[j - 1]);
+    if ((uniq > 0.9 * S.rows.length && mono) || /^(respondent\s*)?id$|respondent/i.test(h)) { S.roles[i] = "id"; return; }
+    if (!outcomeSet && /overall|satisf|\bnps\b|likely to recommend/i.test(h)) { S.roles[i] = "outcome"; outcomeSet = true; return; }
+    if (/likely to|intent|return|continue/i.test(h)) { S.roles[i] = "ignore"; return; }
+    S.roles[i] = "question";
+  });
+}
+function renderCols() {
+  const opts = { question: "Question", outcome: "Outcome", ignore: "Ignore" };
+  $("#cols").innerHTML = S.headers.map((h, i) => {
+    const r = S.roles[i];
+    if (r === "text" || r === "id") return `<div><span title="${esc(h)}">${esc(h)}</span><span class="chip ${r === "id" ? "ok" : ""}">${r === "id" ? "ID" : "text"}</span></div>`;
+    return `<div><span title="${esc(h)}">${esc(h)}</span><select data-i="${i}" aria-label="Role for ${esc(h)}">${Object.entries(opts).map(([k, v]) => `<option value="${k}" ${k === r ? "selected" : ""}>${v}</option>`).join("")}</select></div>`;
+  }).join("");
+  $("#cols").querySelectorAll("select").forEach(s => s.onchange = () => {
+    const i = +s.dataset.i; if (s.value === "outcome") Object.keys(S.roles).forEach(k => { if (S.roles[k] === "outcome") S.roles[k] = "question"; });
+    S.roles[i] = s.value; S.decisions = {}; renderCols(); run();
+  });
+}
+
+/* ---------- analysis ---------- */
+function showErr(m) { const e = $("#err"); e.textContent = m; e.hidden = !m; }
+function run() {
+  showErr("");
+  const qIdx = Object.keys(S.roles).filter(k => S.roles[k] === "question").map(Number);
+  const oIdx = Object.keys(S.roles).filter(k => S.roles[k] === "outcome").map(Number)[0];
+  const idIdx = Object.keys(S.roles).filter(k => S.roles[k] === "id").map(Number)[0];
+  if (qIdx.length < 3) { S.res = null; render(); return showErr("Mark at least three numeric columns as questions."); }
+  const need = oIdx != null ? [...qIdx, oIdx] : qIdx;
+  const clean = S.rows.filter(r => (idIdx == null || isNum(r[idIdx])) && need.every(i => isNum(r[i])));
+  const n = clean.length, dropped = S.rows.length - n;
+  if (n < qIdx.length + 2) { S.res = null; render(); return showErr(`Only ${n} complete rows for ${qIdx.length} questions. Factor analysis needs many more respondents than questions (ideally 5 to 10 per question).`); }
+  const items = qIdx.map(i => S.headers[i]);
+  const cols = qIdx.map(i => clean.map(r => +r[i]));
+  const sds = cols.map(FA.sd); const zero = items.filter((_, j) => sds[j] === 0);
+  if (zero.length) { S.res = null; render(); return showErr(`These questions have the same answer for everyone and must be ignored: ${zero.join(", ")}`); }
+  const C = FA.corr(cols), thr = +$("#thr").value || 0.85;
+  const y = oIdx != null ? clean.map(r => +r[oIdx]) : null;
+  // redundant pairs
+  const pairs = [], drop = new Set();
+  for (let i = 0; i < items.length; i++) for (let j = i + 1; j < items.length; j++) if (C[i][j] >= thr) {
+    const key = items[i] + "||" + items[j];
+    let d = S.decisions[key];
+    if (!d) d = (drop.has(i) || drop.has(j)) ? "none" : "b";
+    pairs.push({ i, j, r: C[i][j], key, d });
+    if (d === "a") drop.add(i); if (d === "b") drop.add(j);
+  }
+  const keepI = items.map((_, i) => i).filter(i => !drop.has(i));
+  if (keepI.length < 3) { S.res = null; render(); return showErr("Too few questions remain after dropping duplicates. Raise the threshold."); }
+  const Ck = keepI.map(i => keepI.map(j => C[i][j]));
+  let km = null; try { km = FA.kmo(Ck); } catch (e) { }
+  const nc = +$("#ncomp").value || 0;
+  let P; try { P = FA.pcaVarimax(Ck, nc, true); } catch (e) { return showErr("The analysis could not converge on this data."); }
+  const p = Ck.length, logdet = P.eig.reduce((s, v) => s + Math.log(Math.max(v, 1e-12)), 0);
+  const chi = -(n - 1 - (2 * p + 5) / 6) * logdet, df = p * (p - 1) / 2;
+  const keep = keepI.map(i => items[i]);
+  // component names: suggest the top-loading question
+  const names = [...Array(P.k).keys()].map(j => {
+    let bi = 0; P.L.forEach((r, i) => { if (Math.abs(r[j]) > Math.abs(P.L[bi][j])) bi = i; });
+    return S.names[P.k + ":" + j] ?? shortName(keep[bi]);
+  });
+  const comm = P.L.map(r => r.reduce((s, x) => s + x * x, 0));
+  let reg = null;
+  if (y) {
+    const Z = keepI.map(i => { const m = FA.mean(cols[i]), s = Math.sqrt(cols[i].reduce((t, x) => t + (x - m) ** 2, 0) / n); return cols[i].map(x => (x - m) / s); });
+    const W = FA.matmul(FA.inv(Ck), P.L); // p x k
+    const FS = [...Array(n).keys()].map(t => [...Array(P.k).keys()].map(j => keepI.reduce((s, _, a) => s + Z[a][t] * W[a][j], 0)));
+    try { reg = FA.ols(FS.map(r => [1, ...r]), y); } catch (e) { }
+  }
+  S.res = { n, dropped, items, cols, C, pairs, drop, keep, keepI, P, km, chi, df, pval: FA.chi2sf(chi, df), names, comm, reg, outcome: oIdx != null ? S.headers[oIdx] : null, thr, clean, qIdx, oIdx };
+  const sel = $("#ncomp"), cur = sel.value;
+  sel.innerHTML = `<option value="0">Auto (eigenvalue &gt; 1)</option>` + [...Array(Math.min(10, keep.length)).keys()].slice(1).map(k => `<option value="${k + 1}">${k + 1}</option>`).join("");
+  sel.value = cur && sel.querySelector(`option[value="${cur}"]`) ? cur : "0";
+  render();
+}
+function shortName(h) { const s = String(h).replace(/^Q\d+\s*/, ""); return s.length > 26 ? s.slice(0, 25) + "…" : s; }
+["#thr", "#cut", "#ncomp"].forEach(id => $(id).addEventListener("change", () => { if (id !== "#cut") S.names = {}; run(); }));
+
+/* ---------- rendering ---------- */
+function heat(v) {
+  const a = Math.min(1, Math.abs(v)), pct = Math.round(a * 85);
+  return v >= 0 ? `background:color-mix(in srgb, var(--accent) ${pct}%, var(--panel));color:${a > .55 ? "var(--panel)" : "var(--fg)"}`
+                : `background:color-mix(in srgb, var(--neg) ${pct}%, var(--panel));color:${a > .55 ? "var(--panel)" : "var(--fg)"}`;
+}
+function render() {
+  const R = S.res, has = S.headers.length > 0;
+  $("#empty").hidden = has; $("#tabs").hidden = !has; $("#kpis").hidden = !has; $("#actions").hidden = !R;
+  if (!has) { ["s1", "s2", "s3", "s4"].forEach(s => $("#" + s).hidden = true); $("#m").hidden = !S.showHow; return; }
+  $("#kpis").innerHTML = !R ? "" : [
+    [R.n, "respondents"], [R.items.length, "questions uploaded"], [R.drop.size, "redundant, dropped"],
+    [R.P.k, "service dimensions"], [(R.P.L.reduce((s, r) => s + r.reduce((t, x) => t + x * x, 0), 0) / R.keep.length * 100).toFixed(0) + "%", "variance explained"],
+    [R.km ? R.km.overall.toFixed(2) : "n/a", "KMO adequacy"]].map(([v, l]) => `<div class="kpi"><b>${v}</b><small>${l}</small></div>`).join("");
+  document.querySelectorAll("[role=tab]").forEach(b => { b.setAttribute("aria-selected", b.dataset.t === S.tab); $("#" + b.dataset.t).hidden = b.dataset.t !== S.tab; });
+  if (!R) { ["#s1", "#s2", "#s3", "#s4"].forEach(s => $(s).innerHTML = ""); return; }
+  renderS1(R); renderS2(R); renderS3(R); renderS4(R);
+}
+$("#tabs").onclick = e => { const b = e.target.closest("[role=tab]"); if (b) { S.tab = b.dataset.t; render(); } };
+
+function renderS1(R) {
+  const show = S.headers.map((h, i) => i), rows = S.rows.slice(0, 40);
+  const desc = R.items.map((q, j) => { const c = R.cols[j]; return `<tr><td class="q">${esc(q)}</td><td class="n">${f2(FA.mean(c))}</td><td class="n">${f2(FA.sd(c))}</td><td class="n">${Math.min(...c)}</td><td class="n">${Math.max(...c)}</td></tr>`; }).join("");
+  $("#s1").innerHTML = `<h2>Step 1 · The raw survey</h2>
+  <p class="lead">${R.n} respondents × ${R.items.length} questions${R.dropped ? `, ${R.dropped} incomplete rows left out` : ""}. <b>Staring at this tells you almost nothing</b>: averages hide which questions move together, and nobody can manage against ${R.items.length} separate measures.</p>
+  <div class="two"><div class="scroll" style="max-height:460px"><table><thead><tr>${show.map(i => `<th class="${S.roles[i] === "text" ? "q" : ""}">${esc(S.headers[i])}</th>`).join("")}</tr></thead>
+  <tbody>${rows.map(r => `<tr>${show.map(i => `<td class="${S.roles[i] === "text" ? "q" : "n"}">${esc(r[i] ?? "")}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+  <div class="scroll" style="max-height:460px"><table><thead><tr><th class="q">Question</th><th>Mean</th><th>SD</th><th>Min</th><th>Max</th></tr></thead><tbody>${desc}</tbody></table></div></div>
+  <p class="note">Showing the first ${rows.length} of ${S.rows.length} rows.</p>`;
+}
+
+function renderS2(R) {
+  const it = R.items, showNums = it.length <= 30;
+  const head = `<tr><th class="q" style="text-align:left">Question (column # = row #)</th>${it.map((q, j) => `<th class="v" title="${esc(q)}">${j + 1}</th>`).join("")}</tr>`;
+  const body = it.map((q, i) => `<tr><td class="q" title="${esc(q)}"><span class="ix">${i + 1}</span>${esc(q.length > 70 ? q.slice(0, 69) + "…" : q)}</td>${it.map((_, j) => j > i ? `<td class="n blank"></td>` : `<td class="n" style="${i === j ? "" : heat(R.C[i][j])}" title="${esc(it[i])} × ${esc(it[j])}: ${f2(R.C[i][j])}">${showNums ? (i === j ? "1" : f2(R.C[i][j]).replace("0.", ".")) : ""}</td>`).join("")}</tr>`).join("");
+  const pairs = R.pairs.length ? R.pairs.map((p, k) => `<div class="pair"><span class="r">${f2(p.r)}</span><span class="nm">${esc(it[p.i])}<br><span class="sub">${esc(it[p.j])}</span></span>
+    <span class="seg" role="radiogroup" aria-label="Decision">${[["a", "Drop first"], ["b", "Drop second"], ["none", "Keep both"]].map(([v, l]) => `<label><input type="radio" name="p${k}" value="${v}" data-key="${esc(p.key)}" ${p.d === v ? "checked" : ""}>${l}</label>`).join("")}</span></div>`).join("")
+    : `<p class="note">No pair of questions correlates at or above ${R.thr}. Nothing is redundant at this threshold.</p>`;
+  $("#s2").innerHTML = `<h2>Step 2 · Correlation matrix</h2>
+  <p class="lead">Columns are numbered to match the rows; hover a number for the full question. Only the lower half is shown, because the upper half mirrors it. Darker cells are questions customers answer the same way. <b>Blocks</b> of dark cells hint at dimensions. Pairs at or above <b>${R.thr}</b> are so close that customers cannot tell them apart, so one of each pair is dropped before Step 3.</p>
+  <div class="scroll heat tri" style="max-height:620px"><table>${head}${body}</table></div>
+  <h3 style="margin-top:20px">Redundant pairs (${R.pairs.length}) · ${R.keep.length} questions go forward</h3><div class="pairs">${pairs}</div>`;
+  $("#s2").querySelectorAll("input[type=radio]").forEach(x => x.onchange = () => { S.decisions[x.dataset.key] = x.value; S.names = {}; run(); });
+}
+function shortLabel(q) { const s = String(q); return s.length > 30 ? s.slice(0, 29) + "…" : s; }
+
+function renderS3(R) {
+  const { L, k, eig } = R.P, cut = +$("#cut").value || 0.5, keep = R.keep;
+  const prim = L.map(r => r.reduce((b, x, j) => Math.abs(x) > Math.abs(r[b]) ? j : b, 0));
+  const order = keep.map((_, i) => i).sort((a, b) => prim[a] - prim[b] || Math.abs(L[b][prim[b]]) - Math.abs(L[a][prim[a]]));
+  const ss = [...Array(k).keys()].map(j => L.reduce((s, r) => s + r[j] ** 2, 0));
+  const rows = order.map(i => `<tr><td class="q">${esc(keep[i])}</td>${L[i].map((x, j) => `<td class="n ${j === prim[i] && Math.abs(x) >= cut ? "hi" : ""} ${x < 0 ? "ng" : ""}">${f3(x)}</td>`).join("")}</tr>`).join("");
+  // scree
+  const W = 360, H = 200, pad = 32, m = Math.min(eig.length, 15), ymax = Math.ceil(Math.max(eig[0], 1.5));
+  const X = i => pad + i * (W - pad - 10) / Math.max(1, m - 1), Y = v => H - 24 - v / ymax * (H - 40);
+  const pts = eig.slice(0, m).map((v, i) => `${X(i)},${Y(v)}`).join(" ");
+  const scree = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Scree plot of eigenvalues">
+    ${[...Array(ymax + 1).keys()].map(v => `<line x1="${pad}" x2="${W - 10}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" /><text x="${pad - 6}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`).join("")}
+    <line x1="${pad}" x2="${W - 10}" y1="${Y(1)}" y2="${Y(1)}" stroke="var(--warn)" stroke-dasharray="4 3" /><text x="${W - 12}" y="${Y(1) - 5}" text-anchor="end" style="fill:var(--warn)">eigenvalue = 1</text>
+    <polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" />
+    ${eig.slice(0, m).map((v, i) => `<circle cx="${X(i)}" cy="${Y(v)}" r="${i < k ? 4.5 : 3}" fill="${i < k ? "var(--accent)" : "var(--panel)"}" stroke="var(--accent)" stroke-width="1.5"><title>Component ${i + 1}: ${f2(v)}</title></circle><text x="${X(i)}" y="${H - 8}" text-anchor="middle">${i + 1}</text>`).join("")}
+  </svg>`;
+  $("#s3").innerHTML = `<h2>Step 3 · Rotated component matrix</h2>
+  <p class="lead">Principal Component Analysis with Varimax rotation on the ${keep.length} retained questions. <b>The shaded cell</b> in each row is that question's highest loading, shaded only when it is ${cut} or more. Questions shaded in the same column go together; name each component by reading its questions (click a name to edit it).</p>
+  <div class="scroll"><table id="ltable"><thead><tr><th class="q">Question</th>${R.names.map((nm, j) => `<th><div style="font-weight:500;color:var(--muted);font-size:11px">Component ${j + 1}</div><input class="name-in" data-j="${j}" value="${esc(nm)}" aria-label="Name for component ${j + 1}"></th>`).join("")}</tr></thead>
+  <tbody>${rows}</tbody>
+  <tfoot><tr><td class="q"><b>Sum of squared loadings</b></td>${ss.map(v => `<td class="n">${f2(v)}</td>`).join("")}</tr>
+  <tr><td class="q"><b>% of variance</b></td>${ss.map(v => `<td class="n">${(v / keep.length * 100).toFixed(1)}%</td>`).join("")}</tr></tfoot></table></div>
+  <p class="note">Together the ${k} component${k > 1 ? "s" : ""} explain <b>${(ss.reduce((a, b) => a + b, 0) / keep.length * 100).toFixed(1)}%</b> of the variance.</p>
+  <div class="two" style="margin-top:18px"><div class="panel"><h3>Scree plot</h3>${scree}<p class="note">${k} component${k > 1 ? "s" : ""} ${+$("#ncomp").value ? "chosen manually" : "have eigenvalues above 1"}. Look for the elbow where the line flattens.</p></div>
+  <div class="panel"><h3>Diagnostics</h3>
+    <table><tbody>
+    <tr><td class="q">KMO sampling adequacy</td><td class="n">${R.km ? f2(R.km.overall) : "n/a"}</td><td>${R.km ? chip(R.km.overall >= .8 ? "good" : R.km.overall >= .6 ? "acceptable" : "weak", R.km.overall >= .6) : ""}</td></tr>
+    <tr><td class="q">Bartlett's test χ² (df ${R.df})</td><td class="n">${R.chi.toFixed(0)}</td><td>${chip(R.pval < .05 ? "p < 0.05" : "p = " + f3(R.pval), R.pval < .05)}</td></tr>
+    <tr><td class="q">Respondents per question</td><td class="n">${(R.n / keep.length).toFixed(1)}</td><td>${chip(R.n / keep.length >= 5 ? "enough" : "thin", R.n / keep.length >= 5)}</td></tr>
+    </tbody></table>
+  </div></div>`;
+  $("#s3").querySelectorAll(".name-in").forEach(inp => inp.onchange = () => { S.names[R.P.k + ":" + inp.dataset.j] = inp.value; R.names[+inp.dataset.j] = inp.value; renderS4(R); });
+}
+const chip = (t, ok) => `<span class="chip ${ok ? "ok" : ""}">${t}</span>`;
+
+function renderS4(R) {
+  if (!R.outcome) { $("#s4").innerHTML = `<h2>Step 4 · Linkage</h2><p class="lead">Mark one column as the <b>Outcome</b> (for example overall satisfaction) in the Columns panel to see which dimensions drive it.</p>`; return; }
+  if (!R.reg) { $("#s4").innerHTML = `<h2>Step 4 · Linkage</h2><p class="lead">The regression could not be estimated on this data.</p>`; return; }
+  const g = R.reg, mx = Math.max(...g.b.slice(1).map(Math.abs));
+  const ranked = R.names.map((nm, j) => ({ nm, b: g.b[j + 1], se: g.se[j + 1], t: g.t[j + 1] })).sort((a, b) => b.b - a.b);
+  $("#s4").innerHTML = `<h2>Step 4 · What drives ${esc(R.outcome)}?</h2>
+  <p class="lead">${esc(R.outcome)} regressed on each respondent's score for the ${R.P.k} dimensions. A coefficient is how many units the outcome moves for a one-standard-deviation improvement in that dimension. The dimensions explain <b>${(g.r2 * 100).toFixed(0)}%</b> of the variation.</p>
+  <div class="scroll"><table><thead><tr><th class="q">Dimension</th><th style="text-align:left;min-width:180px">Effect</th><th>Coefficient</th><th>Std error</th><th>t-stat</th><th></th></tr></thead><tbody>
+  ${ranked.map(r => `<tr><td class="q">${esc(r.nm)}</td><td style="text-align:left"><div class="bar ${r.b < 0 ? "n" : ""}" style="width:${Math.abs(r.b) / mx * 100}%"></div></td><td class="n">${f3(r.b)}</td><td class="n">${f3(r.se)}</td><td class="n">${r.t.toFixed(1)}</td><td>${chip(Math.abs(r.t) >= 1.96 ? "significant" : "not significant", Math.abs(r.t) >= 1.96)}</td></tr>`).join("")}
+  <tr><td class="q">Intercept (average outcome)</td><td></td><td class="n">${f3(g.b[0])}</td><td class="n">${f3(g.se[0])}</td><td></td><td></td></tr></tbody></table></div>
+  <p class="note">R² = ${f3(g.r2)}, n = ${R.n}. Significance uses |t| ≥ 1.96 (about 95% confidence). Factor scores use the regression method.</p>`;
+}
+
+/* ---------- export ---------- */
+function reportBook() {
+  const R = S.res, wb = XLSX.utils.book_new(), cut = +$("#cut").value || 0.5;
+  const sum = [["Survey Factor Lab report"], [], ["Source", S.name], ["Respondents", R.n], ["Rows left out (incomplete)", R.dropped], ["Questions uploaded", R.items.length],
+    ["Redundancy threshold", R.thr], ["Dropped as redundant", [...R.drop].map(i => R.items[i]).join("; ") || "none"], ["Questions analysed", R.keep.length],
+    ["Components retained", R.P.k], ["KMO", R.km ? +R.km.overall.toFixed(3) : "n/a"], ["Bartlett chi-square", +R.chi.toFixed(1)], ["Bartlett df", R.df], ["Bartlett p-value", R.pval],
+    [], ["Method", "PCA on the correlation matrix; Varimax rotation with Kaiser normalization; components with eigenvalue > 1 unless set manually"]];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sum), "Summary");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["Question", "Mean", "Std dev", "Min", "Max"], ...R.items.map((q, j) => [q, +FA.mean(R.cols[j]).toFixed(3), +FA.sd(R.cols[j]).toFixed(3), Math.min(...R.cols[j]), Math.max(...R.cols[j])])]), "Step 1 Descriptives");
+  const cm = [["", ...R.items], ...R.items.map((q, i) => [q, ...R.C[i].map(v => +v.toFixed(3))]), [], ["Redundant pairs"], ["Question A", "Question B", "r", "Decision"],
+    ...R.pairs.map(p => [R.items[p.i], R.items[p.j], +p.r.toFixed(3), p.d === "a" ? "drop A" : p.d === "b" ? "drop B" : "keep both"])];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cm), "Step 2 Correlations");
+  const L = R.P.L, prim = L.map(r => r.reduce((b, x, j) => Math.abs(x) > Math.abs(r[b]) ? j : b, 0));
+  const order = R.keep.map((_, i) => i).sort((a, b) => prim[a] - prim[b] || Math.abs(L[b][prim[b]]) - Math.abs(L[a][prim[a]]));
+  const lt = [["Question", ...R.names, "Communality"], ...order.map(i => [R.keep[i], ...L[i].map(v => +v.toFixed(3)), +R.comm[i].toFixed(3)]),
+    [], ["Unrotated eigenvalues", ...R.P.eig.map(v => +v.toFixed(3))], [], [`Each question belongs to the component with its highest loading, if that loading is ${cut} or more.`]];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lt), "Step 3 Loadings");
+  if (R.reg) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["Driver", "Coefficient", "Std error", "t-stat"], ["Intercept", ...[R.reg.b[0], R.reg.se[0], R.reg.t[0]].map(v => +v.toFixed(3))],
+    ...R.names.map((nm, j) => [nm, ...[R.reg.b[j + 1], R.reg.se[j + 1], R.reg.t[j + 1]].map(v => +v.toFixed(3))]), [], ["R-squared", +R.reg.r2.toFixed(3)], ["Outcome", R.outcome]]), "Step 4 Linkage");
+  return wb;
+}
+let downloads = null;
+(async () => { try { downloads = await window.claude?.use?.("downloads"); } catch (e) { } })();
+async function save(filename, data) {
+  const m = $("#exportmsg");
+  if (!downloads) { // regular browser: plain file download
+    const url = URL.createObjectURL(data instanceof Blob ? data : new Blob([data], { type: "text/plain" }));
+    const a = document.createElement("a"); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000); m.textContent = "Saved " + filename; return;
+  }
+  try { await downloads.save({ filename, data }); m.textContent = "Saved " + filename; }
+  catch (e) { m.textContent = e && e.code === "declined" ? "Download cancelled." : "Could not save the file here."; }
+}
+$("#export").onclick = () => {
+  if (!S.res) return;
+  const buf = XLSX.write(reportBook(), { bookType: "xlsx", type: "array" });
+  save((S.name || "survey").replace(/\.[^.]+$/, "") + "_factor_report.xlsx", new Blob([buf]));
+};
+$("#tmpl").onclick = () => save("survey_template.csv", "Respondent ID,Customer Type,Q1 Your first question,Q2 Your second question,Q3 Your third question,Overall Satisfaction\n1,Student,6,5,7,6\n2,Local,4,4,5,4\n");
+$("#copy").onclick = async () => {
+  const t = $("#ltable"); if (!t) return;
+  const tsv = [...t.rows].map(r => [...r.cells].map(c => (c.querySelector("input")?.value ?? c.innerText).replace(/\s+/g, " ").trim()).join("\t")).join("\n");
+  try { await navigator.clipboard.writeText(tsv); $("#exportmsg").textContent = "Loadings copied. Paste into Excel."; }
+  catch (e) { const r = document.createRange(); r.selectNode(t); getSelection().removeAllRanges(); getSelection().addRange(r); $("#exportmsg").textContent = "Table selected. Press Ctrl/Cmd+C to copy."; }
+};
+
+$("#pick2").onclick = () => fi.click();
+$("#infoBtn").onclick = e => { const p = $("#infoPanel"); p.hidden = !p.hidden; e.currentTarget.setAttribute("aria-expanded", String(!p.hidden)); };
+$("#howto").onclick = () => { S.showHow = !S.showHow; render(); };
+$("#cols").innerHTML = '<p class="note" style="margin:8px">No file loaded yet.</p>';
+render();
+</script>
+</body>
+</html>
